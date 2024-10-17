@@ -101,11 +101,40 @@ const PhotoEditor: React.FC<PhotoEditorProps> = ({
       const croppedImage = await getCroppedImg(image, croppedAreaPixels);
       if (croppedImage) {
         setCroppedImage(croppedImage);
-        setFramedImage(croppedImage);
+  
+        // Apply frame0 by default
+        const frameUrl = '/frame0.png';
+        const framedImg = await applyFrameLogic(croppedImage, frameUrl);
+        setFramedImage(framedImg);
+        setSelectedFrame(frameUrl);
       }
     }
   };
-
+  
+  // Helper function to apply frame logic
+  const applyFrameLogic = async (croppedImage: string, frameUrl: string) => {
+    try {
+      const frame = await createImage(frameUrl);
+      const image = await createImage(croppedImage);
+  
+      const canvas = document.createElement('canvas');
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const ctx = canvas.getContext('2d');
+  
+      if (!ctx) {
+        throw new Error('Unable to get canvas context');
+      }
+  
+      ctx.drawImage(image, 0, 0);
+      ctx.drawImage(frame, 0, 0, image.width, image.height);
+  
+      return canvas.toDataURL('image/png');
+    } catch (error) {
+      console.error('Error applying frame:', error);
+      return croppedImage; // Fallback to the cropped image if framing fails
+    }
+  };
   const applyFrame = async (frameUrl: string) => {
     if (croppedImage) {
       try {
